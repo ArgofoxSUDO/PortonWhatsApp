@@ -9,7 +9,7 @@ MQTT_BROKER    = "broker.hivemq.com"
 MQTT_TOPIC_CMD = "esp32shield/relay1/cmd"
 
 NUMEROS_AUTORIZADOS = [
-    "whatsapp:+521XXXXXXXXXX",
+    "whatsapp:+5215638711451",
 ]
 
 COMANDOS = {
