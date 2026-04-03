@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 MQTT_BROKER = "broker.hivemq.com"
 ZONA_HORARIA = pytz.timezone("America/Mexico_City")
-COOLDOWN_SEGUNDOS = 20
-HORA_INICIO = 1
+COOLDOWN_SEGUNDOS = 5
+HORA_INICIO = 2
 HORA_FIN = 23
 
 NUMEROS_AUTORIZADOS = [
@@ -22,7 +22,6 @@ COMANDOS = {
     "puerta": {"topic": "esp32shield/relay2/cmd", "nombre": "Peatonal"},
 }
 
-# Estado global de cooldown
 ultimo_comando = None
 
 def hora_permitida():
@@ -46,15 +45,19 @@ def segundos_restantes():
 def whatsapp_webhook():
     global ultimo_comando
     from_number = request.form.get("From", "").strip()
-    body = request.form.get("Body", "").strip().lower()
+    author      = request.form.get("Author", "").strip()
+    body        = request.form.get("Body", "").strip().lower()
     resp = MessagingResponse()
 
-    if from_number not in NUMEROS_AUTORIZADOS:
+    # En grupos usar Author, en chat individual usar From
+    numero_real = author if author else from_number
+
+    if numero_real not in NUMEROS_AUTORIZADOS:
         resp.message("❌ No autorizado.")
         return str(resp)
 
     if not hora_permitida():
-        resp.message("🕐 Sistema inactivo. Horario de operación: 9:00 a 23:00.")
+        resp.message("🕐 Sistema inactivo. Horario: 9:00 a 23:00.")
         return str(resp)
 
     if en_cooldown():
@@ -74,15 +77,15 @@ def whatsapp_webhook():
             resp.message(f"✅ {cmd['nombre']} activado por 2 segundos.")
         except Exception as e:
             resp.message(f"⚠️ Error: {e}")
-    elif body in ["ayuda", "help"]:
+    elif body in ["Ayuda", "help"]:
         resp.message(
             "📋 Comandos disponibles:\n"
-            "• abrir → Abre Portón"
-            "• puerta → Abre Peatonal"
-            "Horario operativo: 9:00 a 23:00"
+            "• abrir → Activa Relay 1\n"
+            "• puerta → Activa Relay 2\n"
+            "Horario: 9:00 a 23:00"
         )
     else:
-        resp.message(f"❓ Comando no reconocido. Envía *ayuda*.")
+        resp.message("❓ Comando no reconocido. Envía *ayuda*.")
 
     return str(resp)
 
